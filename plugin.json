@@ -1,0 +1,24 @@
+{
+  "slug": "Hack-The-Planet",
+  "name": "Hack-The-Planet",
+  "version": "1.0.0",
+  "license": "GPL-3.0-or-later",
+  "brand": "Hack-The-Planet",
+  "author": "scanner darkly",
+  "authorEmail": "",
+  "authorUrl": "https://github.com/scanner-darkly",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "modules": [
+    {
+      "slug": "Sequencer",
+      "name": "Sequencer",
+      "description": "",
+      "tags": [
+        "sequencer"
+      ]
+    }
+  ]
+}
