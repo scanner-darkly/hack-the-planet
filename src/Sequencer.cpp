@@ -23,9 +23,20 @@ struct Sequencer : Module {
         NUM_OUTPUTS
     };
     enum LightIds {
+        STEP0_LIGHT,
+        STEP1_LIGHT,
+        STEP2_LIGHT,
+        STEP3_LIGHT,
+        STEP4_LIGHT,
+        STEP5_LIGHT,
+        STEP6_LIGHT,
+        STEP7_LIGHT,
         NUM_LIGHTS
     };
 
+    int currentStep;
+    dsp::SchmittTrigger clockIn;
+    
     Sequencer() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
         
@@ -37,9 +48,35 @@ struct Sequencer : Module {
         configParam(STEP5_PARAM, 0.f, 10.f, 0.f, "Step 5");
         configParam(STEP6_PARAM, 0.f, 10.f, 0.f, "Step 6");
         configParam(STEP7_PARAM, 0.f, 10.f, 0.f, "Step 7");
+        
+        currentStep = 0;
     }
 
     void process(const ProcessArgs &args) override {
+
+        if (clockIn.process(rescale(inputs[CLOCK_INPUT].getVoltage(), 0.1f, 2.f, 0.f, 1.f))) {
+            
+            turnOffStep();
+            
+            currentStep++;
+            if (currentStep > 7) currentStep = 0;
+            
+            outputCV();
+            
+            turnOnStep();
+        }
+    }
+    
+    void outputCV() {
+        outputs[CV_OUTPUT].setVoltage(params[STEP0_PARAM + currentStep].getValue());
+    }
+    
+    void turnOffStep() {
+        lights[STEP0_LIGHT + currentStep].setBrightness(0.f);
+    }
+    
+    void turnOnStep() {
+        lights[STEP0_LIGHT + currentStep].setBrightness(1.f);
     }
 };
 
@@ -64,6 +101,15 @@ struct SequencerWidget : ModuleWidget {
         addParam(createParamCentered<RoundLargeBlackKnob>(mm2px(Vec(130, 60)), module, Sequencer::STEP5_PARAM));
         addParam(createParamCentered<RoundLargeBlackKnob>(mm2px(Vec(150, 60)), module, Sequencer::STEP6_PARAM));
         addParam(createParamCentered<RoundLargeBlackKnob>(mm2px(Vec(170, 60)), module, Sequencer::STEP7_PARAM));
+        
+        addChild(createLight<SmallLight<RedLight>>(mm2px(Vec(29, 68)), module, Sequencer::STEP0_LIGHT));
+        addChild(createLight<SmallLight<RedLight>>(mm2px(Vec(49, 68)), module, Sequencer::STEP1_LIGHT));
+        addChild(createLight<SmallLight<RedLight>>(mm2px(Vec(69, 68)), module, Sequencer::STEP2_LIGHT));
+        addChild(createLight<SmallLight<RedLight>>(mm2px(Vec(89, 68)), module, Sequencer::STEP3_LIGHT));
+        addChild(createLight<SmallLight<RedLight>>(mm2px(Vec(109, 68)), module, Sequencer::STEP4_LIGHT));
+        addChild(createLight<SmallLight<RedLight>>(mm2px(Vec(129, 68)), module, Sequencer::STEP5_LIGHT));
+        addChild(createLight<SmallLight<RedLight>>(mm2px(Vec(149, 68)), module, Sequencer::STEP6_LIGHT));
+        addChild(createLight<SmallLight<RedLight>>(mm2px(Vec(169, 68)), module, Sequencer::STEP7_LIGHT));
         
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(170, 110)), module, Sequencer::CV_OUTPUT));
     }
