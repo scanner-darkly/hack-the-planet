@@ -13,6 +13,7 @@ struct Sequencer : Module {
         STEP7_PARAM,
         STEP8_PARAM,
         DIRECTION_PARAM,
+        LENGTH_PARAM,
         NUM_PARAMS
     };
     enum InputIds {
@@ -36,6 +37,7 @@ struct Sequencer : Module {
     };
 
     int currentStep;
+    int sequenceLength;
     dsp::SchmittTrigger clockIn;
     
     Sequencer() {
@@ -50,23 +52,26 @@ struct Sequencer : Module {
         configParam(STEP6_PARAM, 0.f, 10.f, 0.f, "Step 6");
         configParam(STEP7_PARAM, 0.f, 10.f, 0.f, "Step 7");
 
-		configParam(DIRECTION_PARAM, 0.f, 1.f, 1.f, "Direction");
+        configParam(DIRECTION_PARAM, 0.f, 1.f, 1.f, "Direction");
+        configParam(LENGTH_PARAM, 0.f, 8.f, 8.f, "Length");
 
         currentStep = 0;
+        sequenceLength = 8;
     }
 
     void process(const ProcessArgs &args) override {
 
         if (clockIn.process(rescale(inputs[CLOCK_INPUT].getVoltage(), 0.1f, 2.f, 0.f, 1.f))) {
             
+            updateLength();
             turnOffStep();
             
             if (params[DIRECTION_PARAM].getValue() == 1.f) { // forward
                 currentStep++;
-                if (currentStep > 7) currentStep = 0;
+                if (currentStep > (sequenceLength - 1)) currentStep = 0;
             } else {
                 currentStep--;
-                if (currentStep < 0) currentStep = 7;
+                if (currentStep < 0) currentStep = sequenceLength - 1;
                 
             }
             
@@ -86,6 +91,10 @@ struct Sequencer : Module {
     
     void turnOnStep() {
         lights[STEP0_LIGHT + currentStep].setBrightness(1.f);
+    }
+    
+    void updateLength() {
+        sequenceLength = (int) clamp(std::round(params[LENGTH_PARAM].getValue()), 1.f, 8.f);
     }
 };
 
@@ -123,6 +132,7 @@ struct SequencerWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(170, 110)), module, Sequencer::CV_OUTPUT));
         
         addParam(createParam<CKSS>(Vec(50, 110), module, Sequencer::DIRECTION_PARAM));
+        addParam(createParam<RoundBlackSnapKnob>(Vec(80, 105), module, Sequencer::LENGTH_PARAM));
     }
 };
 
