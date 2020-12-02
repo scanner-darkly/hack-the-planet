@@ -12,6 +12,7 @@ struct Sequencer : Module {
         STEP6_PARAM,
         STEP7_PARAM,
         STEP8_PARAM,
+        DIRECTION_PARAM,
         NUM_PARAMS
     };
     enum InputIds {
@@ -48,7 +49,9 @@ struct Sequencer : Module {
         configParam(STEP5_PARAM, 0.f, 10.f, 0.f, "Step 5");
         configParam(STEP6_PARAM, 0.f, 10.f, 0.f, "Step 6");
         configParam(STEP7_PARAM, 0.f, 10.f, 0.f, "Step 7");
-        
+
+		configParam(DIRECTION_PARAM, 0.f, 1.f, 1.f, "Direction");
+
         currentStep = 0;
     }
 
@@ -58,8 +61,14 @@ struct Sequencer : Module {
             
             turnOffStep();
             
-            currentStep++;
-            if (currentStep > 7) currentStep = 0;
+            if (params[DIRECTION_PARAM].getValue() == 1.f) { // forward
+                currentStep++;
+                if (currentStep > 7) currentStep = 0;
+            } else {
+                currentStep--;
+                if (currentStep < 0) currentStep = 7;
+                
+            }
             
             outputCV();
             
@@ -112,6 +121,8 @@ struct SequencerWidget : ModuleWidget {
         addChild(createLight<SmallLight<RedLight>>(mm2px(Vec(169, 68)), module, Sequencer::STEP7_LIGHT));
         
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(170, 110)), module, Sequencer::CV_OUTPUT));
+        
+        addParam(createParam<CKSS>(Vec(50, 110), module, Sequencer::DIRECTION_PARAM));
     }
 };
 
