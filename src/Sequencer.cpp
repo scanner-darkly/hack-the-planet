@@ -13,11 +13,14 @@ struct Sequencer : Module {
         STEP7_PARAM,
         STEP8_PARAM,
         DIRECTION_PARAM,
-        LENGTH_PARAM,
+        START_STEP_PARAM,
+        END_STEP_PARAM,
         NUM_PARAMS
     };
     enum InputIds {
         CLOCK_INPUT,
+        START_STEP_INPUT,
+        END_STEP_INPUT,
         NUM_INPUTS
     };
     enum OutputIds {
@@ -37,7 +40,8 @@ struct Sequencer : Module {
     };
 
     int currentStep;
-    int sequenceLength;
+    int startStep;
+    int endStep;
     dsp::SchmittTrigger clockIn;
     
     Sequencer() {
@@ -53,26 +57,27 @@ struct Sequencer : Module {
         configParam(STEP7_PARAM, 0.f, 10.f, 0.f, "Step 7");
 
         configParam(DIRECTION_PARAM, 0.f, 1.f, 1.f, "Direction");
-        configParam(LENGTH_PARAM, 0.f, 8.f, 8.f, "Length");
+        configParam(START_STEP_PARAM, 0.f, 7.f, 7.f, "Start Step");
+        configParam(END_STEP_PARAM, 0.f, 7.f, 7.f, "End Step");
 
         currentStep = 0;
-        sequenceLength = 8;
+        startStep = 0;
+        endStep = 7;
     }
 
     void process(const ProcessArgs &args) override {
 
         if (clockIn.process(rescale(inputs[CLOCK_INPUT].getVoltage(), 0.1f, 2.f, 0.f, 1.f))) {
             
-            updateLength();
+            updateSteps();
             turnOffStep();
             
             if (params[DIRECTION_PARAM].getValue() == 1.f) { // forward
                 currentStep++;
-                if (currentStep > (sequenceLength - 1)) currentStep = 0;
+                if (currentStep > endStep) currentStep = startStep;
             } else {
                 currentStep--;
-                if (currentStep < 0) currentStep = sequenceLength - 1;
-                
+                if (currentStep < startStep) currentStep = endStep;
             }
             
             outputCV();
@@ -93,8 +98,9 @@ struct Sequencer : Module {
         lights[STEP0_LIGHT + currentStep].setBrightness(1.f);
     }
     
-    void updateLength() {
-        sequenceLength = (int) clamp(std::round(params[LENGTH_PARAM].getValue()), 1.f, 8.f);
+    void updateSteps() {
+        startStep = (int) clamp(std::round(params[START_STEP_PARAM].getValue() + inputs[START_STEP_INPUT].getVoltage()), 0.f, 7.f);
+        endStep = (int) clamp(std::round(params[END_STEP_PARAM].getValue() + inputs[END_STEP_INPUT].getVoltage()), 0.f, 7.f);
     }
 };
 
@@ -110,6 +116,8 @@ struct SequencerWidget : ModuleWidget {
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
         
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30, 110)), module, Sequencer::CLOCK_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(50, 110)), module, Sequencer::START_STEP_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(70, 110)), module, Sequencer::END_STEP_INPUT));
         
         addParam(createParamCentered<RoundLargeBlackKnob>(mm2px(Vec(30, 60)), module, Sequencer::STEP0_PARAM));
         addParam(createParamCentered<RoundLargeBlackKnob>(mm2px(Vec(50, 60)), module, Sequencer::STEP1_PARAM));
@@ -131,8 +139,9 @@ struct SequencerWidget : ModuleWidget {
         
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(170, 110)), module, Sequencer::CV_OUTPUT));
         
-        addParam(createParam<CKSS>(Vec(50, 110), module, Sequencer::DIRECTION_PARAM));
-        addParam(createParam<RoundBlackSnapKnob>(Vec(80, 105), module, Sequencer::LENGTH_PARAM));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(30, 95)), module, Sequencer::DIRECTION_PARAM));
+        addParam(createParamCentered<RoundBlackSnapKnob>(mm2px(Vec(50, 95)), module, Sequencer::START_STEP_PARAM));
+        addParam(createParamCentered<RoundBlackSnapKnob>(mm2px(Vec(70, 95)), module, Sequencer::END_STEP_PARAM));
     }
 };
 
