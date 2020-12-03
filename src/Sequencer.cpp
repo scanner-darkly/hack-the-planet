@@ -15,12 +15,14 @@ struct Sequencer : Module {
         DIRECTION_PARAM,
         START_STEP_PARAM,
         END_STEP_PARAM,
+        STEP_PARAM,
         NUM_PARAMS
     };
     enum InputIds {
         CLOCK_INPUT,
         START_STEP_INPUT,
         END_STEP_INPUT,
+        STEP_INPUT,
         NUM_INPUTS
     };
     enum OutputIds {
@@ -42,6 +44,7 @@ struct Sequencer : Module {
     int currentStep;
     int startStep;
     int endStep;
+    int step;
     dsp::SchmittTrigger clockIn;
     
     Sequencer() {
@@ -59,10 +62,12 @@ struct Sequencer : Module {
         configParam(DIRECTION_PARAM, 0.f, 1.f, 1.f, "Direction");
         configParam(START_STEP_PARAM, 0.f, 7.f, 7.f, "Start Step");
         configParam(END_STEP_PARAM, 0.f, 7.f, 7.f, "End Step");
+        configParam(STEP_PARAM, 1.f, 7.f, 1.f, "Step");
 
         currentStep = 0;
         startStep = 0;
         endStep = 7;
+        step = 1;
     }
 
     void process(const ProcessArgs &args) override {
@@ -76,14 +81,14 @@ struct Sequencer : Module {
                 if (currentStep == endStep) {
                     currentStep = startStep;
                 } else {
-                    currentStep++;
+                    currentStep += step;
                     if (currentStep > 7) currentStep = 0;
                 }
             } else {
                 if (currentStep == startStep) {
                     currentStep = endStep;
                 } else {
-                    currentStep--;
+                    currentStep -= step;
                     if (currentStep < 0) currentStep = 7;
                 }
             }
@@ -109,6 +114,7 @@ struct Sequencer : Module {
     void updateSteps() {
         startStep = (int) clamp(std::round(params[START_STEP_PARAM].getValue() + inputs[START_STEP_INPUT].getVoltage()), 0.f, 7.f);
         endStep = (int) clamp(std::round(params[END_STEP_PARAM].getValue() + inputs[END_STEP_INPUT].getVoltage()), 0.f, 7.f);
+        step = (int) clamp(std::round(params[STEP_PARAM].getValue() + inputs[STEP_INPUT].getVoltage()), 1.f, 7.f);
     }
 };
 
@@ -126,6 +132,7 @@ struct SequencerWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30, 110)), module, Sequencer::CLOCK_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(50, 110)), module, Sequencer::START_STEP_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(70, 110)), module, Sequencer::END_STEP_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(90, 110)), module, Sequencer::STEP_INPUT));
         
         addParam(createParamCentered<RoundLargeBlackKnob>(mm2px(Vec(30, 60)), module, Sequencer::STEP0_PARAM));
         addParam(createParamCentered<RoundLargeBlackKnob>(mm2px(Vec(50, 60)), module, Sequencer::STEP1_PARAM));
@@ -150,6 +157,7 @@ struct SequencerWidget : ModuleWidget {
         addParam(createParamCentered<CKSS>(mm2px(Vec(30, 95)), module, Sequencer::DIRECTION_PARAM));
         addParam(createParamCentered<RoundBlackSnapKnob>(mm2px(Vec(50, 95)), module, Sequencer::START_STEP_PARAM));
         addParam(createParamCentered<RoundBlackSnapKnob>(mm2px(Vec(70, 95)), module, Sequencer::END_STEP_PARAM));
+        addParam(createParamCentered<RoundBlackSnapKnob>(mm2px(Vec(90, 95)), module, Sequencer::STEP_PARAM));
     }
 };
 
