@@ -73,11 +73,19 @@ struct Sequencer : Module {
             turnOffStep();
             
             if (params[DIRECTION_PARAM].getValue() == 1.f) { // forward
-                currentStep++;
-                if (currentStep > endStep) currentStep = startStep;
+                if (currentStep == endStep) {
+                    currentStep = startStep;
+                } else {
+                    currentStep++;
+                    if (currentStep > 7) currentStep = 0;
+                }
             } else {
-                currentStep--;
-                if (currentStep < startStep) currentStep = endStep;
+                if (currentStep == startStep) {
+                    currentStep = endStep;
+                } else {
+                    currentStep--;
+                    if (currentStep < 0) currentStep = 7;
+                }
             }
             
             outputCV();
